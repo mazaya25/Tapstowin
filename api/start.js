@@ -10,7 +10,7 @@ export default function handler(req, res) {
                 <meta property="fc:frame:image" content="https://cointaps.xyz/preview.png">
                 <meta property="fc:frame:button:1" content="Play Now">
                 <meta property="fc:frame:button:1:action" content="post">
-                <meta property="fc:frame:post_url" content="https://cointaps.vercel.app/api/game">
+                <meta property="fc:frame:post_url" content="https://mazaya25.github.io/Tapstowin/index.html">
                 <title>Cointaps Game Started</title>
             </head>
             <body>
