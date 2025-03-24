@@ -1,23 +1,24 @@
 export default function handler(req, res) {
- if (req.method === 'POST') {
- res.setHeader('Content-Type', 'text/html');
- res.status(200).send(`
- <!DOCTYPE html>
- <html lang="en">
- <head>
- <meta charset="UTF-8">
- <meta property="fc:frame" content="vNext">
- <meta property="fc:frame:image" content="https://cointaps.xyz/preview.png">
- <!-- Oyun HTML'sini buraya gömebiliriz, ama şu an basit bir test için -->
- <title>Cointaps Game</title>
- </head>
- <body>
- <h1>Cointaps Game Running Inside Warpcast!</h1>
- <p>Burada oyun içeriği olmalı.</p>
- </body>
- </html>
- `);
- } else {
- res.status(405).send('Method Not Allowed');
- }
+    if (req.method === 'POST') {
+        res.setHeader('Content-Type', 'text/html');
+        res.status(200).send(`
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta property="fc:frame" content="vNext">
+                <meta property="fc:frame:image" content="https://cointaps.xyz/preview.png">
+                <meta property="fc:frame:button:1" content="Tap to Score">
+                <meta property="fc:frame:button:1:action" content="post">
+                <meta property="fc:frame:post_url" content="https://cointaps.vercel.app/api/score">
+                <title>Cointaps Game</title>
+            </head>
+            <body>
+                <h1>Score: 0</h1>
+            </body>
+            </html>
+        `);
+    } else {
+        res.status(405).send('Method Not Allowed');
+    }
 }
