@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cointaps Tap to win!</title>
+    <style>
+        @font-face {
+            font-family: 'CustomFont';
+            src: url('https://cointaps.xyz/assets/fonts/DS-DIGI.TTF') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'CustomFont', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #1a2a44;
+            color: white;
+            text-align: center;
+        }
+        #gameContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            border-radius: 0;
+            overflow: hidden;
+            touch-action: none;
+            margin: 0;
+        }
+        #gameCanvas, #startCanvas, #leaderboardCanvas {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        #startScreen, #endScreen, #leaderboardScreen, #loadingScreen, #infoScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+        #endScreen, #leaderboardScreen, #loadingScreen, #infoScreen {
+            display: none;
+        }
+        #endScreen {
+            background: rgba(0, 0, 0, 0.8);
+        }
+        #infoScreen {
+            background: rgba(0, 0, 0, 0.9);
+        }
+        #startScreen #title {
+            font-family: 'CustomFont', sans-serif;
+            font-size: 60px;
+            color: #C0C0C0;
+            text-shadow: 0 0 10px #C0C0C0, 0 0 20px #4682B4, 0 0 30px #6495ED;
+            margin: 20px 0;
+            animation: pulse 1.5s infinite;
+            line-height: 1;
+            position: relative;
+            z-index: 11;
+        }
+        #startScreen #title span {
+            display: block;
+        }
+        #endScreen h2, #leaderboardScreen h2, #loadingScreen p, #infoScreen h2 {
+            font-family: 'CustomFont', sans-serif;
+            font-size: 48px;
+            color: #C0C0C0;
+            text-shadow: 1px 1px 4px rgba(192, 192, 192, 0.8);
+            margin: 20px 0;
+        }
+        #endScreen p, #leaderboardScreen ol, #stats, #infoScreen p {
+            font-family: 'CustomFont', sans-serif;
+            font-size: 20px;
+            color: #C0C0C0;
+            text-shadow: 1px 1px 4px rgba(192, 192, 192, 0.8);
+            margin: 10px 0;
+        }
+        #stats img {
+            width: 30px;
+            height: 30px;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 22px;
+            background-color: #4682B4;
+            border: none;
+            color: #C0C0C0;
+            cursor: pointer;
+            margin: 10px;
+            border-radius: 5px;
+            font-family: 'CustomFont', sans-serif;
+            touch-action: manipulation;
+            position: relative;
+            z-index: 11;
+        }
+        button:hover {
+            background-color: #6495ED;
+        }
+        #startScreen button:not(:first-of-type) {
+            padding: 10px 20px;
+            font-size: 18px;
+        }
+        #leaderboardScreen ol {
+            list-style: decimal;
+            padding: 0;
+        }
+        #leaderboardScreen li {
+            margin: 5px 0;
+        }
+        #leaderboardScreen h2, #leaderboardScreen ol, #leaderboardScreen button {
+            position: relative;
+            z-index: 2;
+        }
+        #soundButton {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 40px;
+            height: 40px;
+            background: #4682B4;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 11;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            transition: transform 0.2s;
+            touch-action: manipulation;
+        }
+        #soundButton:hover {
+            transform: scale(1.1);
+        }
+        #soundButton.active {
+            background: #6495ED;
+        }
+        #nicknameInput {
+            padding: 10px;
+            font-size: 18px;
+            width: 200px;
+            margin: 10px;
+            border-radius: 5px;
+            border: none;
+            font-family: 'CustomFont', sans-serif;
+            position: relative;
+            z-index: 11;
+        }
+        #infoContent {
+            text-align: left;
+            padding: 20px;
+            max-width: 400px;
+        }
+        #infoContent img {
+            width: 30px;
+            height: 30px;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="loadingScreen">
+            <p>Loading...</p>
+        </div>
+        <div id="startScreen" style="display: flex;">
+            <canvas id="startCanvas"></canvas>
+            <div id="title">
+                <span>COIN</span>
+                <span>TAPS</span>
+            </div>
+            <input type="text" id="nicknameInput" placeholder="Enter your nickname" maxlength="15">
+            <button onclick="submitNickname()">Start Game</button>
+            <button onclick="showInfo()">Info</button>
+            <button onclick="showLeaderboardFromStart()">Leaderboard</button>
+        </div>
+        <div id="infoScreen">
+            <h2>Game Rules</h2>
+            <div id="infoContent">
+                <p><img id="normalCoinIcon" src="https://cointaps.xyz/assets/images/BTC.png"> Tap coins to earn points (+10)</p>
+                <p><img id="rugPullIcon" src="https://cointaps.xyz/assets/images/RUGPULL.png"> Avoid RugPulls (-100, -1 life)</p>
+                <p><img id="baseBonusIcon" src="https://cointaps.xyz/assets/images/BASE.png"> Catch BaseBonus for bonus (+250)</p>
+                <p><img id="powerUpIcon" src="https://cointaps.xyz/assets/images/STAR.png"> Grab PowerUps for special effects</p>
+            </div>
+            <button onclick="hideInfo()">Close</button>
+        </div>
+        <div id="endScreen">
+            <h2 id="endTitle">Game Over</h2>
+            <p>Score: <span id="finalScore">0</span></p>
+            <div id="stats"></div>
+            <button onclick="restartGame()">Play Again</button>
+            <button onclick="showLeaderboard()">Leaderboard</button>
+        </div>
+        <div id="leaderboardScreen">
+            <canvas id="leaderboardCanvas"></canvas>
+            <h2>Leaderboard</h2>
+            <ol id="leaderboardList"></ol>
+            <button onclick="hideLeaderboard()">Back</button>
+        </div>
+        <div id="soundButton" onclick="toggleSound()">🔊</div>
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startCanvas = document.getElementById('startCanvas');
+        const startCtx = startCanvas.getContext('2d');
+        const leaderboardCanvas = document.getElementById('leaderboardCanvas');
+        const leaderboardCtx = leaderboardCanvas.getContext('2d');
+        const gameContainer = document.getElementById('gameContainer');
+        const startScreen = document.getElementById('startScreen');
+        const endScreen = document.getElementById('endScreen');
+        const leaderboardScreen = document.getElementById('leaderboardScreen');
+        const loadingScreen = document.getElementById('loadingScreen');
+        const infoScreen = document.getElementById('infoScreen');
+        const soundButton = document.getElementById('soundButton');
+        const endTitle = document.getElementById('endTitle');
+        const finalScore = document.getElementById('finalScore');
+        const leaderboardList = document.getElementById('leaderboardList');
+        const statsDiv = document.getElementById('stats');
+        const nicknameInput = document.getElementById('nicknameInput');
+
+        let gameState = {
+            score: 0,
+            lives: 5,
+            level: 1,
+            isGameOver: false,
+            isGameStarted: false,
+            objects: [],
+            particles: [],
+            stars: [],
+            shootingStars: [],
+            ripples: [],
+            bonusTexts: [],
+            lastTime: Date.now(),
+            totalTimeRemaining: 200000,
+            levelTimeRemaining: 10000,
+            soundOn: true,
+            hits: {
+                BTC: 0,
+                ETH: 0,
+                DEGEN: 0,
+                SOL: 0,
+                DOGE: 0,
+                BNKR: 0,
+                USDC: 0,
+                OP: 0,
+                RUGPULL: 0,
+                BASE: 0,
+                STAR: 0
+            },
+            nickname: "",
+            activePower: null,
+            powerTimer: 0,
+            lastTouchX: 0,
+            lastTouchY: 0,
+            powerUpQueue: []
+        };
+
+        let startEffects = {
+            stars: [],
+            shootingStars: []
+        };
+
+        let flashEffect = null;
+        let gradientOffset = 0;
+
+        const coinImages = [
+            "https://cointaps.xyz/assets/images/BTC.png",
+            "https://cointaps.xyz/assets/images/ETH.png",
+            "https://cointaps.xyz/assets/images/DEGEN.png",
+            "https://cointaps.xyz/assets/images/SOL.png",
+            "https://cointaps.xyz/assets/images/DOGE.png",
+            "https://cointaps.xyz/assets/images/BNKR.png",
+            "https://cointaps.xyz/assets/images/USDC.png",
+            "https://cointaps.xyz/assets/images/OP.png"
+        ];
+        const coinTypes = ["BTC", "ETH", "DEGEN", "SOL", "DOGE", "BNKR", "USDC", "OP"];
+        const RugPull = "https://cointaps.xyz/assets/images/RUGPULL.png";
+        const BaseBonus = "https://cointaps.xyz/assets/images/BASE.png";
+        const PowerUp = "https://cointaps.xyz/assets/images/STAR.png";
+
+        const normalSound = new Audio("https://cointaps.xyz/assets/sounds/COIN.wav");
+        const RugPullSound = new Audio("https://cointaps.xyz/assets/sounds/RUGPULL.wav");
+        const BaseBonusSound = new Audio("https://cointaps.xyz/assets/sounds/BONUS.wav");
+        const backgroundMusic = new Audio("https://cointaps.xyz/assets/sounds/BACKROUND.mp3");
+        const powerUpSound = new Audio("https://cointaps.xyz/assets/sounds/BONUS.wav");
+        backgroundMusic.loop = true;
+        backgroundMusic.volume = 0.5;
+
+        let preloadedImages = {};
+        let imagesLoaded = 0;
+        const totalImages = coinImages.length + 3;
+
+        function preloadImages() {
+            console.log("Görseller yükleniyor...");
+            coinImages.forEach((src, index) => {
+                const img = new Image();
+                img.src = src;
+                img.onload = () => handleImageLoad(src);
+                img.onerror = () => handleImageError(src);
+                preloadedImages[`normal_${index}`] = img;
+            });
+
+            const RugPullImg = new Image();
+            RugPullImg.src = RugPull;
+            RugPullImg.onload = () => handleImageLoad(RugPull);
+            RugPullImg.onerror = () => handleImageError(RugPull);
+            preloadedImages['RugPull'] = RugPullImg;
+
+            const BaseBonusImg = new Image();
+            BaseBonusImg.src = BaseBonus;
+            BaseBonusImg.onload = () => handleImageLoad(BaseBonus);
+            BaseBonusImg.onerror = () => handleImageError(BaseBonus);
+            preloadedImages['BaseBonus'] = BaseBonusImg;
+
+            const PowerUpImg = new Image();
+            PowerUpImg.src = PowerUp;
+            PowerUpImg.onload = () => handleImageLoad(PowerUp);
+            PowerUpImg.onerror = () => handleImageError(PowerUp);
+            preloadedImages['PowerUp'] = PowerUpImg;
+        }
+
+        function handleImageLoad(src) {
+            imagesLoaded++;
+            console.log(`Görsel yüklendi: ${src} (${imagesLoaded}/${totalImages})`);
+            if (imagesLoaded === totalImages) {
+                console.log("Tüm görseller yüklendi.");
+                loadingScreen.style.display = 'none';
+            }
+        }
+
+        function handleImageError(src) {
+            console.error(`Görsel yüklenemedi: ${src}`);
+            imagesLoaded++;
+            preloadedImages[src.split('/').pop()] = new Image();
+            preloadedImages[src.split('/').pop()].src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==';
+            if (imagesLoaded === totalImages) {
+                console.log("Bazı görseller yüklenemedi ama yükleme tamamlandı.");
+                loadingScreen.style.display = 'none';
+            }
+        }
+
+        window.addEventListener('load', () => {
+            console.log("Sayfa yüklendi, başlangıç ekranı hazırlanıyor...");
+            try {
+                adjustCanvasSize();
+                adjustStartCanvasSize();
+                adjustLeaderboardCanvasSize();
+                startEffects.stars = Array(30).fill().map(() => new Star());
+                preloadImages();
+                drawStartEffects();
+                if (typeof window.FarcadeSDK !== 'undefined') {
+                    window.FarcadeSDK.singlePlayer.actions.ready();
+                    console.log("Farcade SDK hazır.");
+                } else {
+                    console.warn("Farcade SDK yüklenmedi, oyun SDK olmadan devam edecek.");
+                }
+            } catch (error) {
+                console.error("Başlangıç ekranı hazırlanırken hata:", error);
+            }
+        });
+
+        function adjustCanvasSize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            gameContainer.style.width = `${canvas.width}px`;
+            gameContainer.style.height = `${canvas.height}px`;
+            gameState.stars.forEach(star => {
+                star.x = Math.min(star.x, canvas.width);
+                star.y = Math.min(star.y, canvas.height);
+            });
+            gameState.objects.forEach(obj => {
+                obj.x = Math.min(obj.x, canvas.width - 60);
+                obj.y = Math.min(obj.y, canvas.height - 60);
+            });
+            console.log("Oyun canvas boyutu ayarlandı:", canvas.width, "x", canvas.height);
+        }
+
+        function adjustStartCanvasSize() {
+            startCanvas.width = window.innerWidth;
+            startCanvas.height = window.innerHeight;
+            startEffects.stars.forEach(star => {
+                star.x = Math.min(star.x, startCanvas.width);
+                star.y = Math.min(star.y, startCanvas.height);
+            });
+            console.log("Başlangıç canvas boyutu ayarlandı:", startCanvas.width, "x", startCanvas.height);
+        }
+
+        function adjustLeaderboardCanvasSize() {
+            leaderboardCanvas.width = window.innerWidth;
+            leaderboardCanvas.height = window.innerHeight;
+            console.log("Leaderboard canvas boyutu ayarlandı:", leaderboardCanvas.width, "x", leaderboardCanvas.height);
+        }
+
+        window.addEventListener('resize', () => {
+            adjustCanvasSize();
+            adjustStartCanvasSize();
+            adjustLeaderboardCanvasSize();
+        });
+
+        class GameObject {
+            constructor(type = 'normal') {
+                this.x = Math.random() * (canvas.width - 60);
+                this.y = -60;
+                this.type = type;
+                this.subType = (type === 'normal') ? coinTypes[Math.floor(Math.random() * coinTypes.length)] : type;
+                this.image = this.getImage(type);
+                this.isRugPull = type === 'RugPull';
+                this.isBaseBonus = type === 'BaseBonus';
+                this.isPowerUp = type === 'PowerUp';
+                this.speed = 3.0 + (gameState.level - 1) * 0.1;
+                if (this.isBaseBonus || this.isPowerUp) this.speed *= 1.5;
+                this.speedX = Math.random() * 1 - 0.5;
+                this.rotation = 0;
+                this.rotationSpeed = Math.random() * 0.03 - 0.015;
+                this.scale = 1;
+                this.scaleSpeed = Math.random() * 0.03 + 0.01;
+                this.time = 0;
+            }
+            getImage(type) {
+                if (type === 'RugPull') return preloadedImages['RugPull'] || null;
+                if (type === 'BaseBonus') return preloadedImages['BaseBonus'] || null;
+                if (type === 'PowerUp') return preloadedImages['PowerUp'] || null;
+                const normalIndex = Math.floor(Math.random() * coinImages.length);
+                return preloadedImages[`normal_${normalIndex}`] || null;
+            }
+            update(deltaTime) {
+                if (gameState.activePower === 'magnet' && gameState.powerTimer > 0 && !this.isRugPull) {
+                    const dx = gameState.lastTouchX - (this.x + 30);
+                    const dy = gameState.lastTouchY - (this.y + 30);
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance > 10) {
+                        this.x += (dx / distance) * 5;
+                        this.y += (dy / distance) * 5;
+                    }
+                    if (distance < 20) {
+                        this.collect();
+                        return false;
+                    }
+                } else {
+                    this.y += this.speed * (deltaTime / 16.67) * (gameState.activePower === 'slow' ? 0.5 : 1);
+                    this.x += this.speedX * (deltaTime / 16.67);
+                }
+                if (this.x < 0 || this.x > canvas.width - 60) this.speedX = -this.speedX;
+                this.rotation += this.rotationSpeed;
+                this.time += this.scaleSpeed;
+                this.scale = 0.8 + Math.sin(this.time) * 0.2;
+                return this.y <= canvas.height + 60;
+            }
+            draw() {
+                if (this.image && this.image.complete) {
+                    ctx.save();
+                    ctx.translate(this.x + 30, this.y + 30);
+                    ctx.rotate(this.rotation);
+                    ctx.scale(this.scale, this.scale);
+                    ctx.drawImage(this.image, -30, -30, 60, 60);
+                    ctx.restore();
+                } else {
+                    ctx.save();
+                    ctx.translate(this.x + 30, this.y + 30);
+                    ctx.scale(this.scale, this.scale);
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 30, 0, Math.PI * 2);
+                    ctx.fillStyle = this.isRugPull ? 'red' : this.isBaseBonus ? 'green' : this.isPowerUp ? 'purple' : 'yellow';
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+            collect() {
+                if (this.isBaseBonus) {
+                    gameState.score += 250;
+                    gameState.hits.BASE += 1;
+                    gameState.bonusTexts.push(new BonusText(this.x, this.y, "+250"));
+                    if (gameState.soundOn) BaseBonusSound.play().catch(e => console.error("BaseBonus sound error:", e));
+                    triggerFlash('green');
+                } else if (this.isPowerUp) {
+                    const powers = ['slow', 'extraLife', 'magnet'];
+                    const randomPower = weightedRandom(powers, [0.4, 0.2, 0.4]);
+                    activatePower(randomPower, this.x, this.y);
+                    gameState.hits.STAR += 1;
+                } else if (!this.isRugPull) {
+                    gameState.score += 10;
+                    gameState.hits[this.subType] += 1;
+                    if (gameState.soundOn) normalSound.play().catch(e => console.error("Normal sound error:", e));
+                }
+                for (let j = 0; j < 20; j++) gameState.particles.push(new Particle(this.x, this.y));
+            }
+        }
+
+        function weightedRandom(items, weights) {
+            const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+            const randomNum = Math.random() * totalWeight;
+            let weightSum = 0;
+            for (let i = 0; i < items.length; i++) {
+                weightSum += weights[i];
+                if (randomNum <= weightSum) return items[i];
+            }
+        }
+
+        class Particle {
+            constructor(x, y, isRugPull = false) {
+                this.x = x + 30;
+                this.y = y + 30;
+                this.size = Math.random() * 6 + 3;
+                this.speedX = Math.random() * 5 - 2.5;
+                this.speedY = Math.random() * 5 - 2.5;
+                this.life = 25;
+                this.color = isRugPull ? 'rgba(255, 0, 0, 1)' : `hsl(${Math.random() * 360}, 100%, 50%)`;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.life--;
+                this.size *= 0.92;
+                return this.life > 0;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        class BonusText {
+            constructor(x, y, text) {
+                this.x = x;
+                this.y = y;
+                this.text = text;
+                this.opacity = 1;
+                this.life = 20;
+            }
+            update() {
+                this.y -= 1;
+                this.life--;
+                this.opacity -= 0.05;
+                return this.life > 0;
+            }
+            draw() {
+                ctx.fillStyle = `rgba(192, 192, 192, ${this.opacity})`;
+                ctx.font = '20px CustomFont';
+                ctx.fillText(this.text, this.x, this.y);
+            }
+        }
+
+        class Star {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 1;
+                this.speed = Math.random() * 0.2 + 0.05;
+                this.opacity = Math.random() * 0.5 + 0.5;
+                this.opacitySpeed = Math.random() * 0.02 + 0.01;
+            }
+            update() {
+                this.y += this.speed;
+                if (this.y > canvas.height) this.y = -this.size;
+                this.opacity += this.opacitySpeed;
+                if (this.opacity > 1 || this.opacity < 0.2) this.opacitySpeed = -this.opacitySpeed;
+                return true;
+            }
+            draw(ctx) {
+                ctx.fillStyle = `rgba(192, 192, 192, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        class ShootingStar {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = -10;
+                this.length = Math.random() * 20 + 10;
+                this.speedX = Math.random() * 4 - 2;
+                this.speedY = Math.random() * 4 + 2;
+                this.opacity = 1;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.opacity -= 0.02;
+                return this.y < canvas.height + this.length && this.opacity > 0;
+            }
+            draw(ctx) {
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.x - this.speedX * this.length, this.y - this.speedY * this.length);
+                ctx.strokeStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        }
+
+        class Ripple {
+            constructor(x, y, isMagnet = false) {
+                this.x = x;
+                this.y = y;
+                this.radius = 0;
+                this.maxRadius = isMagnet ? 50 : 20;
+                this.speed = isMagnet ? 3 : 1.5;
+                this.opacity = 1;
+            }
+            update() {
+                this.radius += this.speed;
+                this.opacity -= 0.07;
+                return this.opacity > 0;
+            }
+            draw() {
+                ctx.strokeStyle = `rgba(70, 130, 180, ${this.opacity})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+
+        function drawGradientBackground(ctx, width, height) {
+            gradientOffset += 0.01;
+            const gradient = ctx.createRadialGradient(
+                width / 2 + Math.cos(gradientOffset) * 150,
+                height / 2 + Math.sin(gradientOffset) * 150,
+                0,
+                width / 2,
+                height / 2,
+                Math.max(width, height)
+            );
+            gradient.addColorStop(0, '#1a1a1a');
+            gradient.addColorStop(0.5, '#0d0d0d');
+            gradient.addColorStop(1, '#000000');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+        }
+
+        function toggleSound() {
+            gameState.soundOn = !gameState.soundOn;
+            soundButton.textContent = gameState.soundOn ? '🔊' : '🔇';
+            soundButton.classList.toggle('active');
+            if (gameState.soundOn) {
+                backgroundMusic.play().catch(e => console.error("Background music error:", e));
+            } else {
+                backgroundMusic.pause();
+            }
+            console.log("Ses durumu:", gameState.soundOn ? "Açık" : "Kapalı");
+        }
+
+        function submitNickname() {
+            const nickname = nicknameInput.value.trim();
+            if (nickname === "") {
+                alert("Please enter a nickname!");
+                return;
+            }
+            gameState.nickname = nickname;
+            if (imagesLoaded === totalImages) {
+                console.log("Görseller yüklendi, oyun başlatılıyor.");
+                startGame();
+            } else {
+                console.log("Görseller henüz yüklenmedi, bekleniyor...");
+                loadingScreen.style.display = 'flex';
+                startScreen.style.display = 'none';
+            }
+            document.querySelector('meta[property="fc:frame:state"]').setAttribute('content', JSON.stringify({ state: 'playing', nickname }));
+        }
+
+        function startGame() {
+            console.log("Oyun başlatılıyor. Nickname:", gameState.nickname);
+            startScreen.style.display = 'none';
+            endScreen.style.display = 'none';
+            leaderboardScreen.style.display = 'none';
+            infoScreen.style.display = 'none';
+            gameState.isGameOver = false;
+            gameState.isGameStarted = true;
+            gameState.score = 0;
+            gameState.lives = 5;
+            gameState.level = 1;
+            gameState.objects = [];
+            gameState.particles = [];
+            gameState.stars = Array(30).fill().map(() => new Star());
+            gameState.shootingStars = [];
+            gameState.ripples = [];
+            gameState.bonusTexts = [];
+            gameState.lastTime = Date.now();
+            gameState.totalTimeRemaining = 200000;
+            gameState.levelTimeRemaining = 10000;
+            gameState.hits = { BTC: 0, ETH: 0, DEGEN: 0, SOL: 0, DOGE: 0, BNKR: 0, USDC: 0, OP: 0, RUGPULL: 0, BASE: 0, STAR: 0 };
+            gameState.activePower = null;
+            gameState.powerTimer = 0;
+            gameState.powerUpQueue = generatePowerUpQueue();
+            if (gameState.soundOn) {
+                backgroundMusic.play().catch(e => console.error("Background music error:", e));
+            }
+            console.log("Game loop başlatılıyor...");
+            requestAnimationFrame(gameLoop);
+        }
+
+        function restartGame() {
+            console.log("Oyun yeniden başlatılıyor.");
+            gameState.score = 0;
+            gameState.lives = 5;
+            gameState.level = 1;
+            gameState.isGameOver = false;
+            gameState.isGameStarted = false;
+            startScreen.style.display = 'flex';
+            endScreen.style.display = 'none';
+            leaderboardScreen.style.display = 'none';
+            infoScreen.style.display = 'none';
+            nicknameInput.value = gameState.nickname;
+            adjustCanvasSize();
+            drawStartEffects();
+            document.querySelector('meta[property="fc:frame:state"]').setAttribute('content', 'initial');
+        }
+
+        function endGame() {
+            console.log("Oyun sona eriyor...");
+            gameState.isGameOver = true;
+            gameState.isGameStarted = false;
+            endScreen.style.display = 'flex';
+            startScreen.style.display = 'none';
+            leaderboardScreen.style.display = 'none';
+            infoScreen.style.display = 'none';
+            endTitle.textContent = gameState.lives <= 0 ? 'Game Over' : 'Time’s Up!';
+            finalScore.textContent = gameState.score;
+            statsDiv.innerHTML = `
+                <p><img src="https://cointaps.xyz/assets/images/BTC.png"> BTC: ${gameState.hits.BTC}</p>
+                <p><img src="https://cointaps.xyz/assets/images/ETH.png"> ETH: ${gameState.hits.ETH}</p>
+                <p><img src="https://cointaps.xyz/assets/images/DEGEN.png"> DEGEN: ${gameState.hits.DEGEN}</p>
+                <p><img src="https://cointaps.xyz/assets/images/SOL.png"> SOL: ${gameState.hits.SOL}</p>
+                <p><img src="https://cointaps.xyz/assets/images/DOGE.png"> DOGE: ${gameState.hits.DOGE}</p>
+                <p><img src="https://cointaps.xyz/assets/images/BNKR.png"> BNKR: ${gameState.hits.BNKR}</p>
+                <p><img src="https://cointaps.xyz/assets/images/USDC.png"> USDC: ${gameState.hits.USDC}</p>
+                <p><img src="https://cointaps.xyz/assets/images/OP.png"> OP: ${gameState.hits.OP}</p>
+                <p><img src="https://cointaps.xyz/assets/images/RUGPULL.png"> RUGPULL: ${gameState.hits.RUGPULL}</p>
+                <p><img src="https://cointaps.xyz/assets/images/BASE.png"> BASE: ${gameState.hits.BASE}</p>
+                <p><img src="https://cointaps.xyz/assets/images/STAR.png"> STAR: ${gameState.hits.STAR}</p>
+            `;
+            saveScore(gameState.score, gameState.nickname);
+            backgroundMusic.pause();
+            console.log("Oyun sona erdi. Skor:", gameState.score, "Nickname:", gameState.nickname);
+            if (typeof window.FarcadeSDK !== 'undefined') {
+                window.FarcadeSDK.singlePlayer.actions.gameOver({ score: gameState.score });
+            }
+            document.querySelector('meta[property="fc:frame:state"]').setAttribute('content', JSON.stringify({ state: 'ended', score: gameState.score }));
+        }
+
+        function generatePowerUpQueue() {
+            const count = Math.floor(Math.random() * 3) + 2;
+            const queue = [];
+            for (let i = 0; i < count; i++) {
+                queue.push(Math.random() * 10000);
+            }
+            return queue.sort((a, b) => a - b);
+        }
+
+        function spawnObject(deltaTime) {
+            const baseSpawnRate = 0.005 + gameState.level * 0.001;
+            const spawnMultiplier = 1 + Math.min((gameState.level - 1) * 0.02, 0.5);
+            const spawnIncrease = 1.45;
+
+            if (gameState.objects.length > 30) return;
+
+            if (Math.random() < baseSpawnRate * spawnMultiplier * spawnIncrease) {
+                gameState.objects.push(new GameObject('normal'));
+                console.log("Normal obje spawn edildi");
+            }
+
+            if (Math.random() < baseSpawnRate * 0.3 * spawnMultiplier * spawnIncrease) {
+                gameState.objects.push(new GameObject('RugPull'));
+                console.log("RugPull obje spawn edildi");
+            }
+
+            if (Math.random() < baseSpawnRate * 0.05 * spawnMultiplier * spawnIncrease) {
+                gameState.objects.push(new GameObject('BaseBonus'));
+                console.log("BaseBonus obje spawn edildi");
+            }
+
+            if (gameState.powerUpQueue.length > 0) {
+                const timeElapsed = 10000 - gameState.levelTimeRemaining;
+                if (timeElapsed >= gameState.powerUpQueue[0]) {
+                    gameState.objects.push(new GameObject('PowerUp'));
+                    console.log("PowerUp obje spawn edildi (sıra)");
+                    gameState.powerUpQueue.shift();
+                }
+            }
+
+            if (Math.random() < baseSpawnRate * 0.007 * spawnMultiplier * spawnIncrease) {
+                gameState.objects.push(new GameObject('PowerUp'));
+                console.log("PowerUp obje spawn edildi (rastgele)");
+            }
+        }
+
+        function spawnBackgroundEffects() {
+            if (Math.random() < 0.01) {
+                gameState.shootingStars.push(new ShootingStar());
+            }
+        }
+
+        function triggerFlash(color = 'red') {
+            flashEffect = { duration: 500, startTime: Date.now(), color };
+        }
+
+        function activatePower(type, x, y) {
+            switch (type) {
+                case 'slow':
+                    gameState.activePower = 'slow';
+                    gameState.powerTimer = 5000;
+                    triggerFlash('blue');
+                    gameState.bonusTexts.push(new BonusText(x, y, "Slow Time!"));
+                    break;
+                case 'extraLife':
+                    gameState.lives = Math.min(gameState.lives + 1, 5);
+                    gameState.activePower = null;
+                    gameState.powerTimer = 0;
+                    triggerFlash('green');
+                    gameState.bonusTexts.push(new BonusText(x, y, "+1 Life"));
+                    break;
+                case 'magnet':
+                    gameState.activePower = 'magnet';
+                    gameState.powerTimer = 3000;
+                    gameState.ripples.push(new Ripple(x, y, true));
+                    gameState.bonusTexts.push(new BonusText(x, y, "Magnet!"));
+                    break;
+            }
+            if (gameState.soundOn) powerUpSound.play().catch(e => console.error("PowerUp sound error:", e));
+        }
+
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGradientBackground(ctx, canvas.width, canvas.height);
+            gameState.stars.forEach(star => { star.update(); star.draw(ctx); });
+            gameState.shootingStars.forEach(star => star.draw(ctx));
+
+            if (flashEffect) {
+                const elapsed = Date.now() - flashEffect.startTime;
+                const opacity = Math.max(0, 0.5 * (1 - elapsed / flashEffect.duration));
+                ctx.fillStyle = flashEffect.color === 'red' ? `rgba(255, 0, 0, ${opacity})` : flashEffect.color === 'blue' ? `rgba(0, 0, 255, ${opacity})` : `rgba(0, 255, 0, ${opacity})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                if (elapsed >= flashEffect.duration) flashEffect = null;
+            }
+
+            ctx.fillStyle = 'rgba(192, 192, 192, 0.2)';
+            ctx.fillRect(5, 5, 150, 110);
+            ctx.strokeStyle = '#4682B4';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(5, 5, 150, 110);
+
+            ctx.fillStyle = '#C0C0C0';
+            ctx.font = '20px CustomFont';
+            ctx.fillText(`Score: ${gameState.score}`, 10, 40);
+            ctx.font = `${gameState.lives > 2 ? 14 : 18}px CustomFont`;
+            ctx.fillText(`Lives: ${'❤️'.repeat(gameState.lives)}`, 10, 70, 130);
+            ctx.font = '20px CustomFont';
+            ctx.fillText(`Level: ${gameState.level}`, 10, 100);
+
+            const timeRatio = Math.max(gameState.totalTimeRemaining / 200000, 0);
+            const radius = 80 * timeRatio;
+            ctx.beginPath();
+            ctx.arc(canvas.width / 2, canvas.height / 2, radius, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(70, 130, 180, 0.3)`;
+            ctx.fill();
+
+            const seconds = Math.floor(gameState.totalTimeRemaining / 1000);
+            const centiseconds = Math.floor((gameState.totalTimeRemaining % 1000) / 10);
+            const timeString = `${Math.max(seconds, 0)}:${centiseconds.toString().padStart(2, '0')}`;
+            ctx.fillStyle = '#C0C0C0';
+            ctx.font = 'bold 40px CustomFont';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = '#4682B4';
+            ctx.shadowBlur = 5;
+            ctx.fillText(timeString, canvas.width / 2, canvas.height / 2);
+            ctx.shadowBlur = 0;
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'alphabetic';
+
+            gameState.objects.forEach(obj => obj.draw());
+
+            gameState.particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+            gameState.particles = gameState.particles.filter(p => p.life > 0).slice(-50);
+
+            gameState.ripples.forEach(ripple => {
+                ripple.update();
+                ripple.draw();
+            });
+            gameState.ripples = gameState.ripples.filter(r => r.opacity > 0);
+
+            gameState.bonusTexts.forEach(text => {
+                text.update();
+                text.draw();
+            });
+            gameState.bonusTexts = gameState.bonusTexts.filter(t => t.life > 0);
+
+            if (gameState.activePower && gameState.powerTimer > 0) {
+                ctx.fillStyle = '#C0C0C0';
+                ctx.font = '16px CustomFont';
+                ctx.fillText(`${gameState.activePower} (${(gameState.powerTimer / 1000).toFixed(1)}s)`, 10, 130);
+            }
+        }
+
+        function drawStartEffects() {
+            startCtx.clearRect(0, 0, startCanvas.width, startCanvas.height);
+            drawGradientBackground(startCtx, startCanvas.width, startCanvas.height);
+            startEffects.stars.forEach(star => { star.update(); star.draw(startCtx); });
+            if (Math.random() < 0.01) startEffects.shootingStars.push(new ShootingStar());
+            startEffects.shootingStars = startEffects.shootingStars.filter(star => star.update());
+            startEffects.shootingStars.forEach(star => star.draw(startCtx));
+            if (startScreen.style.display !== 'none') {
+                requestAnimationFrame(drawStartEffects);
+            } else {
+                console.log("Başlangıç ekranı kapandı, efektler durduruldu.");
+            }
+        }
+
+        function drawLeaderboardBackground() {
+            drawGradientBackground(leaderboardCtx, leaderboardCanvas.width, leaderboardCanvas.height);
+            if (leaderboardScreen.style.display !== 'none') {
+                requestAnimationFrame(drawLeaderboardBackground);
+            }
+        }
+
+        function handleInput(event) {
+            if (gameState.isGameOver || !gameState.isGameStarted) return;
+            event.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const x = (event.type === 'touchstart' ? event.touches[0].clientX : event.clientX) - rect.left;
+            const y = (event.type === 'touchstart' ? event.touches[0].clientY : event.clientY) - rect.top;
+
+            gameState.lastTouchX = x;
+            gameState.lastTouchY = y;
+            gameState.ripples.push(new Ripple(x, y));
+
+            let hit = false;
+            for (let i = gameState.objects.length - 1; i >= 0; i--) {
+                const obj = gameState.objects[i];
+                if (x >= obj.x - 2 && x <= obj.x + 62 && y >= obj.y - 2 && y <= obj.y + 62) {
+                    if (obj.isRugPull) {
+                        gameState.lives -= 1;
+                        gameState.score = Math.max(0, gameState.score - 100);
+                        gameState.hits.RUGPULL += 1;
+                        for (let j = 0; j < 30; j++) gameState.particles.push(new Particle(obj.x, obj.y, true));
+                        if (gameState.soundOn) RugPullSound.play().catch(e => console.error("RugPull sound error:", e));
+                        triggerFlash('red');
+                    } else if (obj.isBaseBonus) {
+                        gameState.score += 250;
+                        gameState.hits.BASE += 1;
+                        gameState.bonusTexts.push(new BonusText(obj.x, obj.y, "+250"));
+                        for (let j = 0; j < 30; j++) gameState.particles.push(new Particle(obj.x, obj.y));
+                        if (gameState.soundOn) BaseBonusSound.play().catch(e => console.error("BaseBonus sound error:", e));
+                        triggerFlash('green');
+                    } else if (obj.isPowerUp) {
+                        const powers = ['slow', 'extraLife', 'magnet'];
+                        const randomPower = weightedRandom(powers, [0.4, 0.2, 0.4]);
+                        activatePower(randomPower, obj.x, obj.y);
+                        gameState.hits.STAR += 1;
+                        for (let j = 0; j < 30; j++) gameState.particles.push(new Particle(obj.x, obj.y));
+                    } else {
+                        gameState.score += 10;
+                        gameState.hits[obj.subType] += 1;
+                        hit = true;
+                        for (let j = 0; j < 20; j++) gameState.particles.push(new Particle(obj.x, obj.y));
+                        if (gameState.soundOn) normalSound.play().catch(e => console.error("Normal sound error:", e));
+                    }
+                    gameState.objects.splice(i, 1);
+                    if (typeof window.FarcadeSDK !== 'undefined') {
+                        window.FarcadeSDK.singlePlayer.actions.hapticFeedback();
+                    }
+                    break;
+                }
+            }
+            if (!hit) {
+                gameState.score = Math.max(0, gameState.score - 5);
+            }
+
+            if (gameState.lives <= 0) {
+                endGame();
+            }
+        }
+
+        canvas.addEventListener('click', handleInput);
+        canvas.addEventListener('touchstart', handleInput);
+
+        function gameLoop(timestamp) {
+            if (gameState.isGameOver || !gameState.isGameStarted) {
+                console.log("Game loop durduruldu: isGameOver veya isGameStarted false");
+                return;
+            }
+
+            const now = Date.now();
+            const deltaTime = Math.min(now - gameState.lastTime, 100);
+            gameState.lastTime = now;
+
+            gameState.levelTimeRemaining -= deltaTime;
+            gameState.totalTimeRemaining = Math.max(gameState.totalTimeRemaining - deltaTime, 0);
+
+            if (gameState.powerTimer > 0) {
+                gameState.powerTimer -= deltaTime;
+                if (gameState.powerTimer <= 0) {
+                    gameState.activePower = null;
+                    console.log("Güç süresi bitti.");
+                }
+            }
+
+            console.log(`Game State - Lives: ${gameState.lives}, Total Time: ${gameState.totalTimeRemaining}, Level: ${gameState.level}, Objects: ${gameState.objects.length}, PowerUps Left: ${gameState.powerUpQueue.length}`);
+
+            if (gameState.levelTimeRemaining <= 0) {
+                gameState.level += 1;
+                gameState.levelTimeRemaining = 10000;
+                gameState.powerUpQueue = generatePowerUpQueue();
+                console.log("Seviye yükseldi:", gameState.level, "Yeni PowerUp sırası:", gameState.powerUpQueue);
+            }
+
+            spawnObject(deltaTime);
+            spawnBackgroundEffects();
+            gameState.objects = gameState.objects.filter(obj => obj.update(deltaTime));
+            gameState.shootingStars = gameState.shootingStars.filter(star => star.update());
+            drawGame();
+
+            if (gameState.lives <= 0) {
+                console.log("Oyun bitti: Canlar sıfırlandı.");
+                endGame();
+            } else if (gameState.level > 20) {
+                console.log("Oyun bitti: Maksimum seviye aşıldı.");
+                endGame();
+            } else if (gameState.totalTimeRemaining <= 0) {
+                console.log("Oyun bitti: Süre doldu.");
+                endGame();
+            } else {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        async function saveScore(score, nickname) {
+            try {
+                const response = await fetch('https://cointaps-api.vercel.app/api/scores', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nickname, score })
+                });
+                if (!response.ok) {
+                    throw new Error(`Sunucu hatası: ${response.status} - ${await response.text()}`);
+                }
+                console.log("Skor sunucuya kaydedildi:", { nickname, score });
+            } catch (error) {
+                console.error("Skor kaydederken hata:", error);
+                let scores = JSON.parse(localStorage.getItem('cointaps_scores') || '[]');
+                const existingScoreIndex = scores.findIndex(entry => entry.nickname === nickname);
+                if (existingScoreIndex !== -1) {
+                    if (scores[existingScoreIndex].score < score) {
+                        scores[existingScoreIndex].score = score;
+                        scores[existingScoreIndex].date = new Date().toLocaleString();
+                    }
+                } else {
+                    scores.push({ score, nickname, date: new Date().toLocaleString() });
+                }
+                scores.sort((a, b) => b.score - a.score);
+                scores = scores.slice(0, 10);
+                localStorage.setItem('cointaps_scores', JSON.stringify(scores));
+            }
+        }
+
+        async function showLeaderboard() {
+            endScreen.style.display = 'none';
+            leaderboardScreen.style.display = 'flex';
+            startScreen.style.display = 'none';
+            infoScreen.style.display = 'none';
+            adjustLeaderboardCanvasSize();
+            drawLeaderboardBackground();
+
+            try {
+                const response = await fetch('https://cointaps-api.vercel.app/api/scores');
+                if (!response.ok) {
+                    throw new Error(`Sunucu hatası: ${response.status} - ${await response.text()}`);
+                }
+                const scores = await response.json();
+                leaderboardList.innerHTML = scores.map((entry, index) => `<li>${index + 1}. ${entry.nickname}: ${entry.score} - ${entry.date}</li>`).join('');
+                console.log("Leaderboard güncellendi:", scores);
+            } catch (error) {
+                console.error("Leaderboard alınırken hata:", error);
+                let localScores = JSON.parse(localStorage.getItem('cointaps_scores') || '[]');
+                leaderboardList.innerHTML = localScores.map((entry, index) => `<li>${index + 1}. ${entry.nickname}: ${entry.score} - ${entry.date}</li>`).join('');
+            }
+            document.querySelector('meta[property="fc:frame:state"]').setAttribute('content', 'leaderboard');
+        }
+
+        async function showLeaderboardFromStart() {
+            startScreen.style.display = 'none';
+            leaderboardScreen.style.display = 'flex';
+            infoScreen.style.display = 'none';
+            adjustLeaderboardCanvasSize();
+            drawLeaderboardBackground();
+
+            try {
+                const response = await fetch('https://cointaps-api.vercel.app/api/scores');
+                if (!response.ok) {
+                    throw new Error(`Sunucu hatası: ${response.status} - ${await response.text()}`);
+                }
+                const scores = await response.json();
+                leaderboardList.innerHTML = scores.map((entry, index) => `<li>${index + 1}. ${entry.nickname}: ${entry.score} - ${entry.date}</li>`).join('');
+                console.log("Leaderboard güncellendi:", scores);
+            } catch (error) {
+                console.error("Leaderboard alınırken hata:", error);
+                let localScores = JSON.parse(localStorage.getItem('cointaps_scores') || '[]');
+                leaderboardList.innerHTML = localScores.map((entry, index) => `<li>${index + 1}. ${entry.nickname}: ${entry.score} - ${entry.date}</li>`).join('');
+            }
+            document.querySelector('meta[property="fc:frame:state"]').setAttribute('content', 'leaderboard');
+        }
+
+        function hideLeaderboard() {
+            leaderboardScreen.style.display = 'none';
+            if (gameState.isGameOver) {
+                endScreen.style.display = 'flex';
+                document.querySelector('meta[property="fc:frame:state"]').setAttribute('content', JSON.stringify({ state: 'ended', score: gameState.score }));
+            } else {
+                startScreen.style.display = 'flex';
+                document.querySelector('meta[property="fc:frame:state"]').setAttribute('content', 'initial');
+            }
+        }
+
+        function showInfo() {
+            startScreen.style.display = 'none';
+            infoScreen.style.display = 'flex';
+            leaderboardScreen.style.display = 'none';
+        }
+
+        function hideInfo() {
+            infoScreen.style.display = 'none';
+            startScreen.style.display = 'flex';
+        }
+    </script>
+</body>
+</html>
