@@ -9,8 +9,8 @@ export default function handler(req, res) {
                 <meta property="fc:frame" content="vNext">
                 <meta property="fc:frame:image" content="https://cointaps.xyz/preview.png">
                 <meta property="fc:frame:button:1" content="Play Now">
-                <meta property="fc:frame:button:1:action" content="link">
-                <meta property="fc:frame:button:1:target" content="https://cointaps.xyz/index.html">
+                <meta property="fc:frame:button:1:action" content="post">
+                <meta property="fc:frame:post_url" content="https://cointaps.vercel.app/api/game">
                 <title>Cointaps Game Started</title>
             </head>
             <body>
